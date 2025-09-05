@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import axios, { isAxiosError } from "axios"
 import { Toaster, toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,24 +16,33 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const sendResetLink = async () => {
     setIsLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // await axios.post("/api/auth/forgot-password", { email });
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      console.log("Password reset request for:", email)
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/forgot-password`,
+        { email }
+      )
+      toast.success("Password reset link sent successfully!")
       setIsSubmitted(true)
-    } catch (error) {
-      toast.error("Failed to send reset link. Please try again.")
+    } catch (err) {
+      let errorMessage = "Failed to send reset link. Please try again."
+      if (isAxiosError(err)) {
+        errorMessage = err.response?.data?.message || err.message
+      }
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleResend = () => {
-    handleSubmit(new Event("submit") as unknown as React.FormEvent)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await sendResetLink()
+  }
+
+  const handleResend = async () => {
+    await sendResetLink()
   }
 
   if (isSubmitted) {
@@ -68,8 +78,16 @@ export default function ForgotPasswordPage() {
                   variant="outline"
                   className="w-full border-gray-200 hover:bg-gray-50 bg-transparent"
                   onClick={handleResend}
+                  disabled={isLoading}
                 >
-                  Resend Email
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                      Resending...
+                    </div>
+                  ) : (
+                    "Resend Email"
+                  )}
                 </Button>
               </div>
             </CardContent>

@@ -26,6 +26,8 @@ const userSchema = new mongoose.Schema({
     minlength: [8, "Password must be at least 8 characters long"],
     select: false, // Do not return password by default
   },
+  passwordResetToken: String,
+  passwordResetExpires: Date,
   childAge: {
     type: Number,
   },
@@ -50,4 +52,3 @@ userSchema.pre("save", async function (next) {
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;
-

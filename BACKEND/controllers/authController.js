@@ -1,7 +1,9 @@
 const { promisify } = require('util');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');//1
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
+const { sendResetPasswordEmail } = require('../utils/emailServices');//1
  
 // Utility to sign JWT and send response
 const createSendToken = (user, statusCode, res) => {
@@ -119,5 +121,43 @@ exports.protect = async (req, res, next) => {
     }
     console.error('PROTECT MIDDLEWARE ERROR: ', error);
     return res.status(500).json({ message: 'Something went wrong.' });
+  }
+};
+//forgot password code
+exports.forgotPassword = async (req, res) => {
+  try {
+    // 1) Get user based on POSTed email
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      // To prevent email enumeration, we send a generic success message.
+      // The frontend will always show the "Check your email" screen.
+      return res.status(200).json({
+        status: 'success',
+        message: 'If an account with this email exists, a reset link has been sent.',
+      });
+    }
+
+    // 2) Generate the random reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // 3) Hash the token and set token and expiry on the user object.
+    // We save the hashed version for security. This requires new fields on your User model.
+    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpires = Date.now() + 15 * 60 * 1000; // Expires in 15 minutes
+
+    await user.save({ validateBeforeSave: false });
+
+    // 4) Send the unhashed token to the user's email
+    await sendResetPasswordEmail(user.email, resetToken);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password reset link sent to your email.',
+    });
+  } catch (error) {
+    // In case of a server or DB error, we don't want to leak details.
+    // The email service already handles its own errors, so this is for other issues.
+    console.error('FORGOT PASSWORD ERROR:', error);
+    res.status(500).json({ message: 'An error occurred. Please try again later.' });
   }
 };
