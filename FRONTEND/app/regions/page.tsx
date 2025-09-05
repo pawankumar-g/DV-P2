@@ -1,85 +1,64 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { GraduationCap, MapPin, School, Users, BookOpen, Target, Filter, Search, TrendingUp } from "lucide-react"
 
+type Region = {
+  _id: string;
+  region: string;
+  county: string;
+  schools: string;
+  examBoard: string;
+  color: string;
+};
+
+
 export default function RegionProfilePage() {
+  const [grammarSchoolsData, setGrammarSchoolsData] = useState<Region[]>([])
   const [selectedRegion, setSelectedRegion] = useState("all")
   const [selectedExamBoard, setSelectedExamBoard] = useState("all")
   const [activeTab, setActiveTab] = useState("schools")
 
-  const grammarSchoolsData = [
-    { region: "South East", county: "Kent", schools: "30+", examBoard: "GL", color: "bg-blue-500" },
-    {
-      region: "South East",
-      county: "Medway (Kent sub-area)",
-      schools: "6",
-      examBoard: "GL (own style)",
-      color: "bg-blue-500",
-    },
-    { region: "South East", county: "Buckinghamshire", schools: "13", examBoard: "GL", color: "bg-blue-500" },
-    { region: "South East", county: "Berkshire (Slough)", schools: "4", examBoard: "GL", color: "bg-blue-500" },
-    {
-      region: "South East",
-      county: "Surrey (Kingston & Sutton)",
-      schools: "7",
-      examBoard: "SET + GL",
-      color: "bg-blue-500",
-    },
-    { region: "South West", county: "Gloucestershire", schools: "7", examBoard: "GL", color: "bg-green-500" },
-    { region: "South West", county: "Wiltshire", schools: "2", examBoard: "GL", color: "bg-green-500" },
-    { region: "South West", county: "Torbay (Devon)", schools: "3", examBoard: "GL", color: "bg-green-500" },
-    { region: "South West", county: "Plymouth (Devon)", schools: "3", examBoard: "GL", color: "bg-green-500" },
-    {
-      region: "South West",
-      county: "Dorset (Poole & Bournemouth)",
-      schools: "2",
-      examBoard: "GL",
-      color: "bg-green-500",
-    },
-    { region: "London", county: "Barnet", schools: "3", examBoard: "Own Tests / GL", color: "bg-purple-500" },
-    { region: "London", county: "Bexley", schools: "4", examBoard: "GL", color: "bg-purple-500" },
-    { region: "London", county: "Bromley", schools: "2", examBoard: "Own Test", color: "bg-purple-500" },
-    { region: "London", county: "Sutton", schools: "5", examBoard: "SET + Own", color: "bg-purple-500" },
-    { region: "London", county: "Kingston upon Thames", schools: "2", examBoard: "Own Test", color: "bg-purple-500" },
-    { region: "London", county: "Redbridge", schools: "2", examBoard: "GL", color: "bg-purple-500" },
-    { region: "West Midlands", county: "Birmingham", schools: "8", examBoard: "GL / CEM mix", color: "bg-orange-500" },
-    { region: "West Midlands", county: "Warwickshire", schools: "6", examBoard: "GL", color: "bg-orange-500" },
-    { region: "West Midlands", county: "Walsall", schools: "2", examBoard: "GL", color: "bg-orange-500" },
-    { region: "West Midlands", county: "Wolverhampton", schools: "1", examBoard: "GL", color: "bg-orange-500" },
-    { region: "East Midlands", county: "Lincolnshire", schools: "15", examBoard: "GL", color: "bg-red-500" },
-    { region: "East of England", county: "Essex", schools: "8", examBoard: "CSSE (own board)", color: "bg-pink-500" },
-    {
-      region: "East of England",
-      county: "Hertfordshire",
-      schools: "2 (partially selective)",
-      examBoard: "Own",
-      color: "bg-pink-500",
-    },
-    { region: "North West", county: "Trafford (Manchester)", schools: "7", examBoard: "GL", color: "bg-indigo-500" },
-    { region: "North West", county: "Wirral (Merseyside)", schools: "6", examBoard: "GL", color: "bg-indigo-500" },
-    { region: "North West", county: "Lancashire", schools: "4", examBoard: "GL", color: "bg-indigo-500" },
-    { region: "Yorkshire", county: "North Yorkshire", schools: "3", examBoard: "GL", color: "bg-teal-500" },
-    { region: "Yorkshire", county: "Calderdale (Halifax)", schools: "2", examBoard: "GL", color: "bg-teal-500" },
-  ]
+  // Fetch schools from backend
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/regions") 
+        const data = await res.json()
+        setGrammarSchoolsData(data)
+      } catch (error) {
+        console.error("Error fetching schools:", error)
+      }
+    }
 
-  const filteredData = grammarSchoolsData.filter((item) => {
-    const regionMatch = selectedRegion === "all" || item.region === selectedRegion
-    const examBoardMatch = selectedExamBoard === "all" || item.examBoard.includes(selectedExamBoard)
-    return regionMatch && examBoardMatch
-  })
+    fetchSchools()
+  }, [])
 
+  // Filtered data based on region and exam board
+ const filteredData = grammarSchoolsData?.filter((item) => {
+  const regionMatch =
+    selectedRegion === "all" || item.region === selectedRegion;
+  const examBoardMatch =
+    selectedExamBoard === "all" || item.examBoard?.includes(selectedExamBoard);
+  return regionMatch && examBoardMatch;
+}) || [];
+
+
+  // Get unique regions and exam boards for filter dropdowns
   const regions = [...new Set(grammarSchoolsData.map((item) => item.region))]
   const examBoards = [...new Set(grammarSchoolsData.map((item) => item.examBoard.split(" ")[0]))]
 
+  // Calculate total schools
   const totalSchools = filteredData.reduce((sum, item) => {
-    const schoolCount = item.schools.replace("+", "").replace("(partially selective)", "")
-    return sum + Number.parseInt(schoolCount) || 0
-  }, 0)
+  const schoolCount = String(item.schools)
+    .replace("+", "")
+    .replace("(partially selective)", "");
+  return sum + (Number.parseInt(schoolCount) || 0);
+}, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100">
@@ -177,27 +156,7 @@ export default function RegionProfilePage() {
               <span className="text-white font-semibold mt-2 text-sm">ISEB</span>
             </div>
 
-            {/* KENT */}
-            <div className="flex flex-col items-center group cursor-pointer">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                <div className="text-center">
-                  <div className="text-xs font-bold text-red-600">KENT</div>
-                  <div className="text-xs text-gray-600">TEST</div>
-                </div>
-              </div>
-              <span className="text-white font-semibold mt-2 text-sm">KENT</span>
-            </div>
-
-            {/* BUCKS */}
-            <div className="flex flex-col items-center group cursor-pointer">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                <div className="text-center">
-                  <div className="text-xs font-bold text-teal-600">BUCKS</div>
-                  <div className="text-xs text-gray-600">11+</div>
-                </div>
-              </div>
-              <span className="text-white font-semibold mt-2 text-sm">BUCKS</span>
-            </div>
+           
           </div>
         </div>
       </div>
@@ -220,65 +179,78 @@ export default function RegionProfilePage() {
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-100">
-          <div className="text-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              Select Area (You can select any Region, County or Exam Board from here)
-            </h3>
-          </div>
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-200">
+  {/* Title */}
+  <div className="text-center mb-8">
+    <h3 className="text-xl font-semibold text-gray-800">
+      Select Area
+    </h3>
+    <p className="text-xl font-semibold text-gray-800">
+      You can select any Region, County or Exam Board from here
+    </p>
+  </div>
 
-          <div className="grid md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">Academic Year</label>
-              <Select defaultValue="2024-25">
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2024-25">2024-25</SelectItem>
-                  <SelectItem value="2023-24">2023-24</SelectItem>
-                  <SelectItem value="2022-23">2022-23</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+  {/* Dropdowns */}
+  <div className="grid md:grid-cols-3 gap-6">
+    {/* Academic Year */}
+    <div>
+      <label className="block text-sm font-medium text-gray-600 mb-2">
+        Academic Year
+      </label>
+      <Select defaultValue="2024-25">
+        <SelectTrigger className="w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500">
+          <SelectValue placeholder="Select Year" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="2024-25">2024-25</SelectItem>
+          <SelectItem value="2023-24">2023-24</SelectItem>
+          <SelectItem value="2022-23">2022-23</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">Region</label>
-              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Region" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">ALL REGIONS</SelectItem>
-                  {regions.map((region) => (
-                    <SelectItem key={region} value={region}>
-                      {region}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+    {/* Region */}
+    <div>
+      <label className="block text-sm font-medium text-gray-600 mb-2">
+        Region
+      </label>
+      <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+        <SelectTrigger className="w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500">
+          <SelectValue placeholder="Select Region" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">ALL REGIONS</SelectItem>
+          {regions.map((region) => (
+            <SelectItem key={region} value={region}>
+              {region}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">Exam Board</label>
-              <Select value={selectedExamBoard} onValueChange={setSelectedExamBoard}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Exam Board" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">ALL BOARDS</SelectItem>
-                  {examBoards.map((board) => (
-                    <SelectItem key={board} value={board}>
-                      {board}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+    {/* Exam Board */}
+    <div>
+      <label className="block text-sm font-medium text-gray-600 mb-2">
+        Exam Board
+      </label>
+      <Select value={selectedExamBoard} onValueChange={setSelectedExamBoard}>
+        <SelectTrigger className="w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500">
+          <SelectValue placeholder="Select Exam Board" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">ALL BOARDS</SelectItem>
+          {examBoards.map((board) => (
+            <SelectItem key={board} value={board}>
+              {board}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  </div>
+</div>
 
-           
-          </div>
-        </div>
 
         {/* Statistics Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
