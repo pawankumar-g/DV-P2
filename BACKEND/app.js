@@ -4,6 +4,7 @@ const cors = require('cors');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const schoolRoutes = require("./routes/schoolRoutes");
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use("/api/schools", schoolRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running...');
