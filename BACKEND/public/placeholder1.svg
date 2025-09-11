@@ -1,0 +1,12 @@
+import Image from "next/image"
+
+export default function Example() {
+  return (
+    <Image
+      src="/placeholder1.svg"  // ✅ comes from public folder
+      alt="Placeholder"
+      width={60}
+      height={60}
+    />
+  )
+}

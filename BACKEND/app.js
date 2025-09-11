@@ -4,11 +4,14 @@ const cors = require('cors');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-<<<<<<< HEAD
 const schoolRoutes = require("./routes/schoolRoutes");
-=======
 const regionRoutes = require('./routes/regionRoutes');
->>>>>>> 06b4a28d5f4546e7a2e2a066f050fd071cc454cb
+const subjectRoutes = require('./routes/subjectRoutes');
+const practiceTestRoutes = require('./routes/practiceTestRoutes');
+const activityRoutes = require('./routes/activityRoutes');
+
+// ✅ New import (Tutor Routes)
+const tutorRoutes = require('./routes/tutors');
 
 const app = express();
 
@@ -24,11 +27,13 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-<<<<<<< HEAD
 app.use("/api/schools", schoolRoutes);
-=======
-app.use('/api/regions', regionRoutes);
->>>>>>> 06b4a28d5f4546e7a2e2a066f050fd071cc454cb
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/practice-tests', practiceTestRoutes);
+app.use('/api/recent-activity', activityRoutes);
+
+// ✅ New Tutor Route
+app.use('/api/tutors', tutorRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running...');
