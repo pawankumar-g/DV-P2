@@ -1,330 +1,267 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, MapPin, Clock, Users, Award, BookOpen, Calendar, Phone, Video, Home } from "lucide-react"
+import { Star, MapPin, Users, Award, Heart } from "lucide-react"
 
 export default function TutorsPage() {
+  const [tutors, setTutors] = useState<any[]>([])
   const [selectedSubject, setSelectedSubject] = useState("all")
   const [selectedLocation, setSelectedLocation] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [sortBy, setSortBy] = useState("default")
+  
+  const [priceRange, setPriceRange] = useState([0, 200])
+  const [visibleCount, setVisibleCount] = useState(6)
 
-  const tutors = [
-    {
-      name: "Dr. Sarah Mitchell",
-      subjects: ["Mathematics", "Science"],
-      experience: "12 years",
-      qualification: "PhD Mathematics, Cambridge",
-      rating: 5.0,
-      reviews: 47,
-      location: "Central London",
-      rate: "£80/hour",
-      availability: "Mon-Fri evenings, Weekends",
-      specialties: ["11+ Maths", "Grammar School Prep", "Independent School Entrance"],
-      successRate: "98%",
-      image: "/placeholder.svg?height=100&width=100",
-      description: "Specialist in advanced mathematics with exceptional track record in 11+ preparation.",
-      teachingMethods: ["Online", "In-Person", "Group Sessions"],
-    },
-    {
-      name: "James Thompson",
-      subjects: ["English", "Verbal Reasoning"],
-      experience: "8 years",
-      qualification: "MA English Literature, Oxford",
-      rating: 4.9,
-      reviews: 32,
-      location: "North London",
-      rate: "£70/hour",
-      availability: "Flexible schedule",
-      specialties: ["Creative Writing", "Reading Comprehension", "Verbal Reasoning"],
-      successRate: "96%",
-      image: "/placeholder.svg?height=100&width=100",
-      description: "Expert English tutor with focus on developing strong literacy and reasoning skills.",
-      teachingMethods: ["Online", "In-Person"],
-    },
-    {
-      name: "Ms. Priya Sharma",
-      subjects: ["Verbal Reasoning", "Non-Verbal Reasoning"],
-      experience: "10 years",
-      qualification: "MSc Psychology, UCL",
-      rating: 5.0,
-      reviews: 28,
-      location: "West London",
-      rate: "£75/hour",
-      availability: "Weekdays and Saturdays",
-      specialties: ["Reasoning Skills", "Pattern Recognition", "Logic Puzzles"],
-      successRate: "97%",
-      image: "/placeholder.svg?height=100&width=100",
-      description: "Psychology background brings unique insight to reasoning and cognitive skill development.",
-      teachingMethods: ["Online", "In-Person", "Home Visits"],
-    },
-    {
-      name: "Mr. David Chen",
-      subjects: ["Mathematics", "Non-Verbal Reasoning"],
-      experience: "15 years",
-      qualification: "MEng Engineering, Imperial College",
-      rating: 4.8,
-      reviews: 55,
-      location: "South London",
-      rate: "£85/hour",
-      availability: "Evenings and weekends",
-      specialties: ["Problem Solving", "Spatial Reasoning", "Advanced Mathematics"],
-      successRate: "99%",
-      image: "/placeholder.svg?height=100&width=100",
-      description: "Engineering background provides systematic approach to mathematical and logical thinking.",
-      teachingMethods: ["Online", "In-Person"],
-    },
-    {
-      name: "Mrs. Emma Roberts",
-      subjects: ["English", "Mathematics"],
-      experience: "6 years",
-      qualification: "PGCE Primary Education, King's College",
-      rating: 4.9,
-      reviews: 23,
-      location: "East London",
-      rate: "£65/hour",
-      availability: "After school hours",
-      specialties: ["Foundation Skills", "Confidence Building", "Exam Technique"],
-      successRate: "94%",
-      image: "/placeholder.svg?height=100&width=100",
-      description: "Primary education specialist focused on building strong foundations and exam confidence.",
-      teachingMethods: ["Online", "In-Person", "Group Sessions"],
-    },
-    {
-      name: "Dr. Michael Brown",
-      subjects: ["All Subjects"],
-      experience: "20 years",
-      qualification: "PhD Education, Cambridge",
-      rating: 5.0,
-      reviews: 67,
-      location: "Central London",
-      rate: "£100/hour",
-      availability: "Limited availability",
-      specialties: ["Comprehensive Prep", "School Selection", "Interview Preparation"],
-      successRate: "100%",
-      image: "/placeholder.svg?height=100&width=100",
-      description: "Senior education consultant with comprehensive approach to 11+ preparation and school selection.",
-      teachingMethods: ["In-Person", "Consultation"],
-    },
-  ]
+  //  Fetch Tutors
+  useEffect(() => {
+    fetch("http://localhost:5000/api/tutors")
+      .then((res) => res.json())
+      .then((data) => setTutors(data))
+      .catch((err) => console.error("Error fetching tutors:", err))
+  }, [])
 
-  const filteredTutors = tutors.filter((tutor) => {
-    const matchesSubject =
-      selectedSubject === "all" ||
-      tutor.subjects.some((subject) => subject.toLowerCase().includes(selectedSubject.toLowerCase()))
-    const matchesLocation =
-      selectedLocation === "all" || tutor.location.toLowerCase().includes(selectedLocation.toLowerCase())
+  //  Filter + Search + Sort
+  const filteredTutors = tutors
+    .filter((tutor) => {
+      const matchesSubject =
+        selectedSubject === "all" ||
+        tutor.subjects.some((subject: string) =>
+          subject.toLowerCase().includes(selectedSubject.toLowerCase())
+        )
 
-    return matchesSubject && matchesLocation
-  })
+      const matchesLocation =
+        selectedLocation === "all" ||
+        tutor.location?.toLowerCase().includes(selectedLocation.toLowerCase())
 
-  const getMethodIcon = (method: string) => {
-    switch (method) {
-      case "Online":
-        return <Video className="h-4 w-4" />
-      case "In-Person":
-        return <Users className="h-4 w-4" />
-      case "Home Visits":
-        return <Home className="h-4 w-4" />
-      case "Group Sessions":
-        return <Users className="h-4 w-4" />
-      default:
-        return <BookOpen className="h-4 w-4" />
-    }
-  }
+      const matchesSearch = tutor.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+
+      const tutorPrice = parseInt(
+        tutor.rate.replace("£", "").replace("/hour", "")
+      )
+      const matchesPrice =
+        tutorPrice >= priceRange[0] && tutorPrice <= priceRange[1]
+
+      return (
+        matchesSubject && matchesLocation && matchesSearch && matchesPrice
+      )
+    })
+    .sort((a, b) => {
+      if (sortBy === "rating") return b.rating - a.rating
+      if (sortBy === "price")
+        return parseInt(a.rate.replace("£", "")) -
+          parseInt(b.rate.replace("£", ""))
+      if (sortBy === "experience")
+        return parseInt(b.experience) - parseInt(a.experience)
+      return 0
+    })
+
+  const visibleTutors = filteredTutors.slice(0, visibleCount)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Header */}
-      <div className="bg-white border-b border-blue-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <Badge className="mb-4 bg-blue-100 text-blue-700 rounded-full px-4 py-2">👨‍🏫 Expert Tutors</Badge>
-            <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              Find Your Perfect
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {" "}
-                11+ Tutor
-              </span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Connect with London's most experienced 11+ tutors. All our tutors are DBS checked and have proven track
-              records of success.
-            </p>
-          </div>
+      {/*  Hero Section */}
+      <div className="bg-indigo-600 text-white shadow-md">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+          <h1 className="text-4xl lg:text-5xl font-bold mb-4">
+            Find Your Perfect <span className="text-orange-400">Tutor</span>
+          </h1>
+          <p className="text-lg text-white/90 max-w-3xl mx-auto">
+            Explore qualified tutors, subjects, and experience to help you
+            succeed.
+          </p>
         </div>
       </div>
 
-      {/* Filters */}
+      {/*  Filters Bar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
-            <div className="flex gap-2">
-              <select
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-full bg-white text-sm"
-              >
-                <option value="all">All Subjects</option>
-                <option value="mathematics">Mathematics</option>
-                <option value="english">English</option>
-                <option value="verbal">Verbal Reasoning</option>
-                <option value="non-verbal">Non-Verbal Reasoning</option>
-              </select>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap gap-4 justify-center items-center">
+          {/* Subjects */}
+          <select
+            value={selectedSubject}
+            onChange={(e) => setSelectedSubject(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-full bg-white text-sm"
+          >
+            <option value="all">All Subjects</option>
+            <option value="mathematics">Mathematics</option>
+            <option value="english">English</option>
+            <option value="science">Science</option>
+            <option value="verbal reasoning">Verbal Reasoning</option>
+          </select>
 
-              <select
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-full bg-white text-sm"
-              >
-                <option value="all">All Locations</option>
-                <option value="central">Central London</option>
-                <option value="north">North London</option>
-                <option value="south">South London</option>
-                <option value="east">East London</option>
-                <option value="west">West London</option>
-              </select>
-            </div>
-          </div>
+          {/* Locations */}
+          <select
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-full bg-white text-sm"
+          >
+            <option value="all">All Locations</option>
+            <option value="london">London</option>
+            <option value="manchester">Manchester</option>
+            <option value="birmingham">Birmingham</option>
+            <option value="online">Online</option>
+          </select>
+
+          {/* Search */}
+          <input
+            type="text"
+            placeholder="Search tutor..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-full bg-white text-sm"
+          />
+
+          {/* Sort */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-full bg-white text-sm"
+          >
+            <option value="default">Sort By</option>
+            <option value="rating">Highest Rating</option>
+            <option value="price">Price (Low to High)</option>
+            <option value="experience">Most Experienced</option>
+          </select>
         </div>
       </div>
 
-      {/* Tutors Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-2 gap-8">
-          {filteredTutors.map((tutor, index) => (
-            <Card
-              key={index}
-              className="border-2 border-border hover:border-blue-500 hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden"
-            >
-              <CardHeader className="pb-4">
-                <div className="flex items-start gap-4">
-                  <img
-                    src={tutor.image || "/placeholder.svg"}
-                    alt={tutor.name}
-                    className="w-20 h-20 rounded-full border-4 border-blue-100"
-                  />
-                  <div className="flex-1">
-                    <CardTitle className="text-xl text-foreground mb-1">{tutor.name}</CardTitle>
-                    <p className="text-sm text-gray-600 mb-2">{tutor.qualification}</p>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${i < Math.floor(tutor.rating) ? "text-yellow-400 fill-current" : "text-gray-300"}`}
-                          />
-                        ))}
-                        <span className="text-sm text-gray-600 ml-1">
-                          {tutor.rating} ({tutor.reviews} reviews)
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {tutor.location}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Award className="h-4 w-4" />
-                        {tutor.experience}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">{tutor.rate}</div>
-                    <div className="text-sm text-gray-600">per hour</div>
-                    <div className="text-sm font-semibold text-green-600 mt-1">{tutor.successRate}</div>
-                  </div>
+      {/*  Tutors Grid */}
+      <div className="max-w-6xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 pb-12 pt-8">
+        {visibleTutors.map((tutor, index) => (
+          <Card
+            key={index}
+            className="flex flex-col justify-between border rounded-2xl shadow-md hover:shadow-lg transition-shadow"
+          >
+            <CardHeader className="flex flex-row items-center gap-4 relative">
+              <img
+                src={tutor.image}
+                alt={tutor.name}
+                className="w-16 h-16 rounded-full border"
+              />
+              <div>
+                <CardTitle className="text-lg font-bold">{tutor.name}</CardTitle>
+                <CardDescription>{tutor.qualification}</CardDescription>
+                <div className="flex items-center gap-1 text-yellow-500">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="text-sm">
+                    {tutor.rating} ({tutor.reviews} reviews)
+                  </span>
                 </div>
-              </CardHeader>
+                <div className="flex items-center text-sm text-gray-600 gap-3">
+                  <MapPin className="w-4 h-4" />
+                  <span>{tutor.location}</span>
+                  <Users className="w-4 h-4" />
+                  <span>{tutor.experience} yrs</span>
+                </div>
+              </div>
 
-              <CardContent>
-                <CardDescription className="text-muted-foreground mb-4 leading-relaxed">
-                  {tutor.description}
-                </CardDescription>
+            </CardHeader>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <h4 className="font-semibold text-sm mb-2">Subjects:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {tutor.subjects.map((subject, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {subject}
-                        </Badge>
-                      ))}
-                    </div>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-gray-700">{tutor.description}</p>
+
+              {/* Subjects */}
+              <div>
+                <span className="font-semibold text-sm">Subjects:</span>
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  {tutor.subjects.map((sub: string, i: number) => (
+                    <Badge key={i} variant="outline">
+                      {sub}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Specialties */}
+              <div>
+                <span className="font-semibold text-sm">Specialties:</span>
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  {tutor.specialties.map((spec: string, i: number) => (
+                    <Badge key={i} className="bg-green-600 text-white">
+                      {spec}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Teaching Methods */}
+              <div>
+                <span className="font-semibold text-sm">Teaching Methods:</span>
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  {tutor.teachingMethods.map((method: string, i: number) => (
+                    <Badge key={i} variant="secondary">
+                      {method}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rates */}
+              <div className="flex justify-between items-center mt-3">
+                <div>
+                  <p className="text-blue-600 font-bold">{tutor.rate}</p>
+                  <p className="text-green-600 text-sm">{tutor.successRate}</p>
+                  <p className="text-xs text-gray-500">{tutor.availability}</p>
+                </div>
+                {parseInt(tutor.successRate) >= 95 && (
+                  <div className="flex items-center gap-1 text-green-600 font-semibold text-sm">
+                    <Award className="w-4 h-4" />
+                    Top Rated
                   </div>
+                )}
+              </div>
 
-                  <div>
-                    <h4 className="font-semibold text-sm mb-2">Specialties:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {tutor.specialties.slice(0, 2).map((specialty, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {specialty}
-                        </Badge>
-                      ))}
-                      {tutor.specialties.length > 2 && (
-                        <Badge variant="secondary" className="text-xs">
-                          +{tutor.specialties.length - 2} more
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <h4 className="font-semibold text-sm mb-2">Teaching Methods:</h4>
-                  <div className="flex gap-2">
-                    {tutor.teachingMethods.map((method, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full"
-                      >
-                        {getMethodIcon(method)}
-                        {method}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
-                  <Clock className="h-4 w-4" />
-                  <span>{tutor.availability}</span>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 rounded-full bg-transparent">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    View Profile
-                  </Button>
-                  <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700 rounded-full">
-                    <Phone className="h-4 w-4 mr-2" />
-                    Book Lesson
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredTutors.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">No tutors found matching your criteria.</div>
-            <Button
-              variant="outline"
-              className="mt-4 bg-transparent"
-              onClick={() => {
-                setSelectedSubject("all")
-                setSelectedLocation("all")
-              }}
-            >
-              Clear Filters
-            </Button>
-          </div>
-        )}
+              {/* Buttons */}
+              <div className="flex gap-2 mt-3">
+                <Button variant="outline" className="flex-1">
+                  View Profile
+                </Button>
+                <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  Book your session
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      {/*  Load More */}
+      {visibleCount < filteredTutors.length && (
+        <div className="flex justify-center mt-6  ">
+          <Button onClick={() => setVisibleCount((prev) => prev + 6)}>
+            Load More
+          </Button>
+        </div>
+      )}
+
+      {/* No Tutors Found */}
+      {filteredTutors.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">No tutors found.</p>
+          <Button
+            variant="outline"
+            className="mt-4 bg-transparent hover:bg-gray-100 rounded-full"
+            onClick={() => setSearchTerm("")}
+          >
+            Clear Filters
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
+
+
+
+
